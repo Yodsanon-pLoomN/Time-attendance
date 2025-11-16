@@ -2,18 +2,17 @@
 
 ## เทคโนโลยีที่ใช้
 
-* Next.js 14 (App Router)
+* Next.js
 * React + TypeScript
 * Tailwind CSS
-* Shadcn UI
-* face-api.js (ตรวจจับใบหน้า)
+* face-api.js
 * Prisma ORM
 * PostgreSQL
 * Vercel (Deploy)
 
 ## หน้าต่างๆ ภายในระบบ
 
-### หน้าสำหรับผู้ใช้ทั่วไป
+### หน้าสำหรับผู้ใช้
 
 * `/auth/signup` – สมัครสมาชิก พร้อมถ่ายใบหน้า
 * `/auth/login` – เข้าสู่ระบบ
