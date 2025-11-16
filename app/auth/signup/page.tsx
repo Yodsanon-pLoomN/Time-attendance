@@ -1,11 +1,14 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import * as faceapi from 'face-api.js'
 
 type FaceDescriptor = number[]
 
 export default function SignUpPage() {
+  const router = useRouter()
+
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const streamRef = useRef<MediaStream | null>(null)
 
@@ -14,8 +17,13 @@ export default function SignUpPage() {
   const [fullName, setFullName] = useState('')
 
   const [modelsLoaded, setModelsLoaded] = useState(false)
-  const [status, setStatus] = useState<string | null>(null)
   const [descriptor, setDescriptor] = useState<FaceDescriptor | null>(null)
+
+  // ใช้สำหรับข้อความด้านล่างหน้า (สมัครไม่สำเร็จ ฯลฯ)
+  const [status, setStatus] = useState<string | null>(null)
+
+  // ใช้สำหรับข้อความใต้กล้อง (ถ่ายหน้าสำเร็จ / ไม่สำเร็จ)
+  const [scanStatus, setScanStatus] = useState<'success' | 'error' | null>(null)
 
   useEffect(() => {
     async function setup() {
@@ -33,6 +41,7 @@ export default function SignUpPage() {
         if (videoRef.current) videoRef.current.srcObject = stream
       } catch (err) {
         console.error(err)
+        setScanStatus('error') // กล้องมีปัญหา → ขึ้นใต้กล้อง
       }
     }
 
@@ -45,11 +54,11 @@ export default function SignUpPage() {
     }
   }, [])
 
-
   async function handleCaptureFace() {
     try {
       if (!modelsLoaded || !videoRef.current) {
-        return setStatus('ไม่สามารถเปิดกล้องได้')
+        setScanStatus('error')
+        return
       }
 
       const det = await faceapi
@@ -59,17 +68,17 @@ export default function SignUpPage() {
 
       if (!det?.descriptor) {
         setDescriptor(null)
-        return setStatus('ไม่พบใบหน้า')
+        setScanStatus('error')
+        return
       }
 
       setDescriptor(Array.from(det.descriptor))
-      setStatus('ถ่ายใบหน้าเรียบร้อย')
+      setScanStatus('success')
     } catch (err) {
       console.error(err)
-      setStatus('เกิดข้อผิดพลาดในการถ่ายใบหน้า')
+      setScanStatus('error')
     }
   }
-
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -94,9 +103,7 @@ export default function SignUpPage() {
         return setStatus(`สมัครไม่สำเร็จ: ${data.error || ''}`)
       }
 
-      setStatus('สมัครสำเร็จ')
-
-
+      router.push('/auth/login')
     } catch (err) {
       console.error(err)
       setStatus('เกิดข้อผิดพลาดในการสมัคร')
@@ -109,7 +116,7 @@ export default function SignUpPage() {
         <h1 className="text-2xl font-bold text-center">สมัครใช้งานระบบลงเวลา</h1>
 
         <div className="grid md:grid-cols-2 gap-6">
-
+          {/* ฟอร์มข้อมูลผู้ใช้ */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
@@ -152,17 +159,10 @@ export default function SignUpPage() {
             >
               สมัครใช้งาน
             </button>
-
-            {descriptor && (
-              <p className="text-xs text-green-600">
-                ✅ พร้อมสมัครใช้งาน
-              </p>
-            )}
           </form>
 
+          {/* กล้อง + ปุ่มถ่ายหน้า + ข้อความใต้กล้อง */}
           <div className="space-y-3">
-            <p className="text-sm font-medium">สแกนใบหน้าสำหรับใช้ลงเวลา</p>
-
             <div className="border rounded overflow-hidden bg-black">
               <video
                 ref={videoRef}
@@ -180,9 +180,16 @@ export default function SignUpPage() {
               ถ่ายใบหน้า
             </button>
 
-            <p className="text-xs text-slate-500">
-              กรุณาหันหน้าเข้าหากล้องและอยู่ในแสงพอเหมาะ
-            </p>
+            {scanStatus === 'success' && (
+              <p className="text-xs text-green-600 text-center">
+                ถ่ายใบหน้าเรียบร้อย
+              </p>
+            )}
+            {scanStatus === 'error' && (
+              <p className="text-xs text-red-600 text-center">
+                ถ่ายใบหน้าไม่สำเร็จ
+              </p>
+            )}
           </div>
         </div>
 

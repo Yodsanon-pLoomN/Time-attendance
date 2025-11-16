@@ -1,4 +1,4 @@
-// components/employee/FaceScanner.tsx
+
 
 type Props = {
   videoRef: React.RefObject<HTMLVideoElement>
