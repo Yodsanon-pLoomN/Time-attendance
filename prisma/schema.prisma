@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+enum Role {
+  EMPLOYEE
+  ADMIN
+}
+
+enum AttendanceStatus {
+  PASS
+  FAIL
+}
+
+enum AttendanceEventType {
+  CHECK_IN_MORNING
+  CHECK_OUT_MORNING
+  CHECK_IN_AFTERNOON
+  CHECK_OUT_AFTERNOON
+  CHECK_IN_EVENING
+  CHECK_OUT_EVENING
+}
+
+model User {
+  id           String             @id @default(cuid())
+  email        String             @unique
+  passwordHash String
+  fullName     String
+  role         Role               @default(EMPLOYEE)
+  createdAt    DateTime           @default(now())
+
+  faceTemplates    FaceTemplate[]
+  attendanceRecord AttendanceRecord[]
+}
+
+model Location {
+  id        String             @id @default(cuid())
+  name      String
+  latitude  Float
+  longitude Float
+  radiusM   Int                @default(200)
+  createdAt DateTime           @default(now())
+
+  attendance AttendanceRecord[]
+}
+
+
+model FaceTemplate {
+  id        String   @id @default(cuid())
+  userId    String
+  faceData  Json      // เก็บ descriptor 128-D ของ face-api.js
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AttendanceRecord {
+  id          String               @id @default(cuid())
+  userId      String
+  locationId  String
+  eventType   AttendanceEventType
+  timestamp   DateTime             @default(now())
+  latitude    Float?
+  longitude   Float?
+  createdAt   DateTime             @default(now())
+  status      AttendanceStatus     @default(PASS)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+
+model AttendanceTimeConfig {
+  id         String               @id @default(cuid())
+  eventType  AttendanceEventType  @unique
+  startMinute Int                 
+  endMinute   Int                 
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+}
